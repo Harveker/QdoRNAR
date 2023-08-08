@@ -5,8 +5,38 @@ franco.endrigo.r@gmail.com
 francoendrigo@ufpr.br
 Date of creation: 12/10/2021,2021
 */
-
 //functions
+global output;
+function [status, yout, nextstep, proteinFree] = Munnin(t, y, flag, proteinFree,cte)
+    k_fR=cte(1)
+    k_fB=cte(2)
+    k_dR=cte(3)
+    k_dB=cte(4)
+    Q = cte(5)
+    r_T = cte(6)
+    b_T=cte(7)
+    K_dQ=cte(8)
+    K_dQ2=cte(9)
+    K_dR=cte(10)
+    K_dB=cte(11)
+    r=cte(12) //mi(v)
+    k= cte(13)
+    if flag == 'cont'
+        // Calculate proteinFree at this time step (assuming you have the appropriate code to do this)
+        R_gfree =r_T*K_dR/(K_dR+R_pf) // Calculate R_gfree
+        BM_gfree=b_T*K_dB/(K_dB +R_pf) // Calculate BM_gfree
+        R_pf = proteinFree(1) // Calculate R_pf
+        
+        // Append the new data to the proteinFree matrix
+        proteinFree = [proteinFree, [R_gfree; BM_gfree; R_pf]];
+    end
+    
+    // Set status and other output arguments
+    status = 0;
+    yout = [];
+    nextstep = [];
+endfunction
+
 function R_pfree = newtonBissection(cte,y)
     V = y(1)
     R_T= y(2)
@@ -149,26 +179,26 @@ function [TD, R_pfree] = cubicRoot (cte, y)
 endfunction
 
 
-function [dy, diffdata] = diferentialSolver(t,y,cte,VrSTR)
+function [dy] = diferentialSolver(t,y,cte,VrSTR)
     //[R_pfree]= newtonBissection(cte,y)
-    
+    n=1
     [R_pfree] =(cubicRoot(cte,y))
-    [Cdata] = [R_pfree]
-    disp(cubicRoot(cte,y))
+    [cData] = [R_pfree]
+    //disp(cubicRoot(cte,y))
     R_pf=[]
     
     // this will select the root in that is a real number, meaning that will always have two complex roots in this system
     if abs(imag(R_pfree(6)))<1D-10 then
         R_pf = abs(real(R_pfree(6)))
-        disp("here1")
+        //disp("here1")
     elseif (abs(imag(R_pfree(7))))<1.D-10 then
         R_pf = abs(real(R_pfree(7)))
-        disp("here2")
+        //disp("here2")
     elseif abs(imag(R_pfree(8)))<1.D-10
         R_pf = abs(real(R_pfree(8)))
-        disp("here3")
+        //disp("here3")
     end
-    disp(R_pf)
+
     //disp( newtonBissection(cte,y))
     //redundant to simplify programming
     //[diffdata] = return [R_pfree]
@@ -202,35 +232,40 @@ function [dy, diffdata] = diferentialSolver(t,y,cte,VrSTR)
     //Ext= 1.2    //extinction rate. Not on use yet.
     
     R_gfree =r_T*K_dR/(K_dR+R_pf)
-        disp('test')
     //disp(R_gfree)    //Free repressor gene concentration at time t
     BM_gfree=b_T*K_dB/(K_dB +R_pf)
+    
     //disp(BM_gfree)
    // disp(list(["Rpfree: " + string(R_pfree)],["Rgfree: " + string(R_gfree)], ["BM_gfree: " + string(BM_gfree)]))
     //dy(1)= V*%e^r*(1-V/k)        // Volume over time eq Ricker Model
-    dy(1)= r*V*(1-(V/k))    // Volume over time eq
     
+    //the differential equations begins here
+    dy(1)= r*V*(1-(V/k))    // Volume over time eq
+
     //does simulate the stabilization of the system well
      dy(2)= (k_fR*vr*R_gfree)-(k_dR*R_pf)-((y(2)/V)*dy(1))    //total repressor over time eq
     // this if statement is to make sure the y(3) can be call either as a matrix or
     //as a single variable.
     if length(y)==3 then
         dy(3)= k_fB*BM_gfree - k_dB*F-F/V*dy(1)    //fluorescence over time
+        dy(4)= R_pf
+        dy(5)=r_T*K_dR/(K_dR+R_pf)
+        dy(6)=b_T*K_dB/(K_dB +R_pf)
+        dy(7)= (Q^2)*R_pf/K_dQ2*K_dQ
+        dy(8)= Q*R_pf/K_dQ
+        dy(9)= R_pf*BM_gfree/K_dB
+        dy(10)= R_pf*R_gfree/K_dR
     else
         for i = 1:length(F)
             //here we call F as an vector, since we accept that F is a submatrix of y(),
             //containing multiple values of Fluorescence.
             dy(2+i)= k_fB*BM_gfree - k_dB*F(i)-(F(i)/V*dy(1))    //fluorescence over time
+            dy(10)=r_T*K_dR/(K_dR+R_pf)
+            dy(11)=b_T*K_dB/(K_dB +R_pf)
         end
     end
+    disp(VrSTR,dy(4:10))
 
-    disp("dy s",dy(:)) //when we call fminsearch it minimizes resulting in complex numbers, 
-    disp("interation go as plan")//which the ODE doesn't handle well. Trying to fix that.
-    
-    
-    [diffdata] = resume [+dy(:)', +[Cdata]';]
-    
-    
 endfunction
 
 function par = APR(pz,Yzero,time,VrSTR)
