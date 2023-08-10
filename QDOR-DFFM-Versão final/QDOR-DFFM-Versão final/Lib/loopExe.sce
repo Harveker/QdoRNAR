@@ -134,9 +134,11 @@ Yzero= [Yz(1);Yz(2);FluorExp(1:6,1);]
 dataSave = struct ('Repressor',[], 'Fluorescence',[], 'Volume', [])
 k=0
 l=0
-for i = 0.0023:0.0005:0.0103    //Changing this you will be able to change the range of the variations and loops
+h = 0.0023:0.0005:0.0063    //Changing this you will be able to change the range of the variations and loops
+
+for i = h
     l= l+1
-    pz(12)= i   //by change this you can choose which variable you want to see variations
+    pz(12)= i   //by changing pz you can choose which variable you want to see variations
     exec ("Main.sce", [-1])
     for j=1:6
     dataSave(l).Repressor(j)= {yfull(k+j,:)}
@@ -150,20 +152,20 @@ end
 
 
 //maintaining this so i may use to understand how to concat strings to create multiple files
-for i=1:11
+for i=1:h
 repFile(i)='rep'+string(i)+'.csv'
 end
-for i=1:11
+for i=1:h
 fluFile(i)='flu'+string(i)+'.csv'
 end
-for i=1:11
+for i=1:h
 volFile(i)= 'vol'+string(i)+'.csv'
 end
 
 repMat=[]
 fluMat=[]
 volMat=[]
-for i=1:11
+for i=1:h
     for j=1:6
     repMat=[repMat, cell2mat(dataSave(i).Repressor(j))';]
     fluMat=[fluMat, cell2mat(dataSave(i).Fluorescence(j))';]
@@ -172,7 +174,9 @@ for i=1:11
 end
 j=6
 k=0
-for i=1:11
+
+/*
+for i=1:h
     disp(k,j)
     csvWrite(repMat(:,k+1:j),repFile(i),';',',')
     csvWrite(fluMat(:,k+1:j),fluFile(i),';',',')
@@ -180,3 +184,9 @@ for i=1:11
     j=j+6
     k=k+6
 end
+*/
+
+csvWrite(repMat(:,:),repFile(1),';',',')
+csvWrite(fluMat(:,:),fluFile(1),';',',')
+csvWrite(volMat(:,:),volFile(1),';',',')
+csvWrite(t(:),"time.csv",';',',')
