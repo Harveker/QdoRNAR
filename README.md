@@ -221,7 +221,7 @@ The model is based on published research on:
 For questions or collaboration, contact:
 - Franco Endrigo
 - franco.endrigo.r@gmail.com
-- francoendrigo@ufpr.br
+- francoendrigo@alunos.utfpr.edu.br
 
 ## License
 
